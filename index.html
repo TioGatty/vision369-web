@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VISION369 — Cobertura audiovisual automática</title>
+  <meta name="description" content="Grabamos cada partido automáticamente y lo subimos a YouTube el mismo día. Sin camarógrafos. Cobertura para torneos y clubes amateur.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    /* ─────────────────────────────────────────
+       DESIGN TOKENS
+    ───────────────────────────────────────── */
+    :root {
+      --bg:          #0A0A0A;
+      --bg-card:     #141414;
+      --bg-card-2:   #1A1A1A;
+      --accent:      #CCFF00;
+      --accent-dim:  rgba(204,255,0,0.10);
+      --accent-bdr:  rgba(204,255,0,0.22);
+      --text:        #FFFFFF;
+      --text-body:   #9A9A9A;
+      --text-muted:  #555555;
+      --border:      rgba(255,255,255,0.07);
+      --border-h:    rgba(255,255,255,0.13);
+      --r-card:      14px;
+      --r-btn:       6px;
+      --f-title:     'Barlow Condensed', sans-serif;
+      --f-body:      'DM Sans', sans-serif;
+      --f-mono:      'JetBrains Mono', monospace;
+      --shadow-card: 0 2px 4px rgba(0,0,0,.6), 0 16px 48px rgba(0,0,0,.35);
+      --shadow-lime: 0 0 28px rgba(204,255,0,0.18);
+      --t: .22s ease;
+    }
+
+    /* ─────────────────────────────────────────
+       RESET
+    ───────────────────────────────────────── */
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    img,video,svg{display:block;max-width:100%}
+    a{color:inherit;text-decoration:none}
+    button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
+    ul{list-style:none}
+    input,textarea{font-family:inherit}
+
+    /* ─────────────────────────────────────────
+       SCROLL REVEAL
+    ───────────────────────────────────────── */
+    .r{opacity:0;transform:translateY(24px);transition:opacity .55s ease,transform .55s ease}
+    .r.on{opacity:1;transform:none}
+    .r.d1{transition-delay:.08s}
+    .r.d2{transition-delay:.16s}
+    .r.d3{transition-delay:.24s}
+    .r.d4{transition-delay:.32s}
+    .r.d5{transition-delay:.40s}
+    @media(prefers-reduced-motion:reduce){.r,.r.d1,.r.d2,.r.d3,.r.d4,.r.d5{opacity:1;transform:none;transition:none}}
+
+    /* ─────────────────────────────────────────
+       UTILITIES
+    ───────────────────────────────────────── */
+    .container{max-width:1200px;margin:0 auto;padding:0 24px}
+    .badge{
+      display:inline-flex;align-items:center;gap:7px;
+      font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+      color:var(--accent);background:var(--accent-dim);border:1px solid var(--accent-bdr);
+      padding:4px 13px;border-radius:40px;
+    }
+    .badge::before{content:'';display:block;width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0}
+    .section-title{
+      font-family:var(--f-title);font-size:clamp(38px,6vw,72px);
+      font-weight:900;text-transform:uppercase;line-height:.9;letter-spacing:-.01em;
+    }
+    .section-sub{font-size:clamp(14px,1.7vw,17px);color:var(--text-body);line-height:1.7;max-width:540px}
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      height:48px;padding:0 28px;border-radius:var(--r-btn);
+      font-family:var(--f-body);font-size:14px;font-weight:700;
+      white-space:nowrap;transition:background var(--t),box-shadow var(--t),transform var(--t),border-color var(--t);
+    }
+    .btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+    .btn-lime{background:var(--accent);color:#000}
+    .btn-lime:hover{background:#d6ff1a;box-shadow:var(--shadow-lime);transform:translateY(-1px)}
+    .btn-ghost{border:1px solid var(--border-h);color:var(--text)}
+    .btn-ghost:hover{border-color:var(--accent-bdr);background:var(--accent-dim)}
+
+    /* ─────────────────────────────────────────
+       HEADER
+    ───────────────────────────────────────── */
+    #hdr{
+      position:fixed;top:0;left:0;right:0;z-index:200;
+      border-bottom:1px solid transparent;
+      transition:background var(--t),border-color var(--t),backdrop-filter var(--t);
+    }
+    #hdr.scr{
+      background:rgba(10,10,10,.88);
+      backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+      border-color:var(--border);
+    }
+    .hdr-in{
+      display:flex;align-items:center;gap:24px;
+      height:68px;max-width:1200px;margin:0 auto;padding:0 24px;
+    }
+    /* Logo */
+    .logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
+    .logo-block{
+      display:flex;align-items:center;justify-content:center;
+      width:40px;height:40px;background:var(--accent);border-radius:5px;flex-shrink:0;
+    }
+    .logo-block span{font-family:var(--f-title);font-size:19px;font-weight:900;color:#000;line-height:1;letter-spacing:-.02em}
+    .logo-text{display:flex;flex-direction:column}
+    .logo-name{font-family:var(--f-title);font-size:19px;font-weight:800;letter-spacing:.03em;line-height:1}
+    .logo-sub{font-family:var(--f-mono);font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+    /* Nav */
+    .hdr-nav{display:flex;align-items:center;gap:32px;flex:1;justify-content:center}
+    .hdr-nav a{font-size:14px;font-weight:500;color:var(--text-body);transition:color var(--t)}
+    .hdr-nav a:hover{color:var(--text)}
+    /* Hamburger */
+    .ham{display:none;flex-direction:column;gap:5px;width:40px;height:40px;align-items:center;justify-content:center;margin-left:auto}
+    .ham span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:var(--t)}
+    .ham.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+    .ham.open span:nth-child(2){opacity:0}
+    .ham.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+    /* Mobile nav */
+    .mob-nav{
+      display:none;position:fixed;top:68px;left:0;right:0;
+      background:rgba(10,10,10,.97);border-bottom:1px solid var(--border);
+      padding:24px;backdrop-filter:blur(16px);z-index:199;
+      flex-direction:column;gap:20px;
+    }
+    .mob-nav.open{display:flex}
+    .mob-nav a{font-size:18px;font-weight:600;color:var(--text-body)}
+    .mob-nav .btn{width:100%;margin-top:4px}
+
+    /* ─────────────────────────────────────────
+       HERO
+    ───────────────────────────────────────── */
+    #hero{
+      min-height:100svh;display:flex;align-items:center;
+      padding-top:68px;position:relative;overflow:hidden;
+    }
+    .hero-bg{
+      position:absolute;inset:0;z-index:0;
+      background:
+        radial-gradient(ellipse 80% 70% at 65% 55%, rgba(15,30,5,.7) 0%,transparent 70%),
+        radial-gradient(ellipse 50% 50% at 15% 70%, rgba(204,255,0,.04) 0%,transparent 65%),
+        var(--bg);
+    }
+    .hero-grid{
+      position:absolute;inset:0;pointer-events:none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+      background-size:56px 56px;
+      mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 20%,transparent 100%);
+      -webkit-mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 20%,transparent 100%);
+    }
+    .hero-in{
+      position:relative;z-index:1;
+      display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;
+      max-width:1200px;margin:0 auto;padding:72px 24px 80px;
+      width:100%;
+    }
+    .hero-left{display:flex;flex-direction:column;gap:22px}
+    .hero-h1{
+      font-family:var(--f-title);font-size:clamp(52px,8.5vw,100px);
+      font-weight:900;text-transform:uppercase;line-height:.88;letter-spacing:-.02em;
+    }
+    .hero-h1 em{font-style:normal;color:var(--accent)}
+    .hero-p{font-size:clamp(14px,1.7vw,17px);color:var(--text-body);line-height:1.7;max-width:450px}
+    .hero-ctas{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    .hero-link{
+      display:flex;align-items:center;gap:6px;
+      font-size:13px;font-weight:600;color:var(--text-body);
+      transition:color var(--t);
+    }
+    .hero-link:hover{color:var(--text)}
+    .hero-stats{
+      display:flex;gap:28px;padding-top:20px;
+      border-top:1px solid var(--border);flex-wrap:wrap;
+    }
+    .stat-num{
+      display:block;font-family:var(--f-title);font-size:38px;font-weight:900;
+      color:var(--accent);line-height:1;
+    }
+    .stat-lbl{
+      display:block;font-family:var(--f-mono);font-size:9px;color:var(--text-muted);
+      text-transform:uppercase;letter-spacing:.07em;margin-top:4px;
+    }
+    /* Hero panel */
+    .hero-right{}
+    .hero-panel{
+      background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
+      overflow:hidden;aspect-ratio:16/10;position:relative;
+      box-shadow:0 2px 4px rgba(0,0,0,.6),0 24px 72px rgba(0,0,0,.6);
+    }
+    .hero-panel video{
+      position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+      z-index:1;opacity:0;transition:opacity .6s ease;
+    }
+    .hero-panel video.loaded{opacity:1}
+    .panel-ph{
+      position:absolute;inset:0;
+      background:linear-gradient(145deg,#0b1708 0%,#0a1206 50%,#080e04 100%);
+      display:flex;align-items:center;justify-content:center;overflow:hidden;
+    }
+    .panel-ph::before{
+      content:'';position:absolute;inset:0;
+      background-image:
+        linear-gradient(rgba(204,255,0,.04) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(204,255,0,.04) 1px,transparent 1px);
+      background-size:36px 36px;
+    }
+    .panel-ph-svg{position:relative;z-index:1}
+    .panel-live{
+      position:absolute;top:14px;left:14px;z-index:3;
+      display:flex;align-items:center;gap:6px;
+      background:rgba(204,255,0,.92);color:#000;
+      font-family:var(--f-mono);font-size:10px;font-weight:700;
+      padding:4px 10px;border-radius:4px;letter-spacing:.06em;text-transform:uppercase;
+    }
+    .panel-live::before{content:'';width:6px;height:6px;border-radius:50%;background:#000}
+    .panel-ov{
+      position:absolute;bottom:0;left:0;right:0;z-index:2;
+      background:linear-gradient(transparent,rgba(0,0,0,.92));
+      padding:20px 20px 20px;
+    }
+    .panel-ov strong{
+      display:block;font-family:var(--f-title);font-size:18px;font-weight:800;
+      text-transform:uppercase;color:#fff;line-height:1;
+    }
+    .panel-ov p{font-size:12px;color:rgba(255,255,255,.65);margin-top:6px;line-height:1.5}
+
+    /* ─────────────────────────────────────────
+       TRUST BAR
+    ───────────────────────────────────────── */
+    #trust{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:18px 0}
+    .trust-in{
+      max-width:1200px;margin:0 auto;padding:0 24px;
+      display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap;
+    }
+    .trust-item{
+      display:flex;align-items:center;gap:9px;
+      font-family:var(--f-mono);font-size:10px;font-weight:700;
+      color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;
+    }
+    .trust-item svg{color:var(--accent);flex-shrink:0}
+
+    /* ─────────────────────────────────────────
+       SERVICIO
+    ───────────────────────────────────────── */
+    #servicio{padding:100px 0}
+    .srv-head{text-align:center;margin-bottom:56px}
+    .srv-head .section-sub{margin:16px auto 0;text-align:center}
+
+    /* Carousel */
+    .carousel-outer{overflow:hidden;padding:8px 0 4px}
+    .carousel-track{
+      display:flex;gap:20px;
+      transition:transform .48s cubic-bezier(.4,0,.2,1);
+    }
+    .c-card{
+      flex:0 0 calc(33.333% - 14px);
+      background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-card);
+      padding:36px 30px;display:flex;flex-direction:column;gap:16px;
+      transition:opacity .4s ease,border-color .3s ease,transform .4s ease;
+      user-select:none;
+    }
+    .c-card.active{border-color:var(--accent-bdr)}
+    .c-card.dim{opacity:.38;transform:scale(.96)}
+    .c-icon{
+      width:48px;height:48px;border-radius:10px;
+      background:var(--accent-dim);border:1px solid var(--accent-bdr);
+      display:flex;align-items:center;justify-content:center;
+    }
+    .c-num{font-family:var(--f-mono);font-size:10px;font-weight:700;color:var(--accent);letter-spacing:.09em}
+    .c-title{font-family:var(--f-title);font-size:26px;font-weight:800;text-transform:uppercase;line-height:1.05}
+    .c-text{font-size:14px;color:var(--text-body);line-height:1.7}
+    .carousel-ctrl{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:32px}
+    .c-btn{
+      width:44px;height:44px;border-radius:50%;border:1px solid var(--border);
+      background:var(--bg-card);display:flex;align-items:center;justify-content:center;
+      color:var(--text);transition:border-color var(--t),background var(--t);
+    }
+    .c-btn:hover{border-color:var(--accent-bdr);background:var(--accent-dim)}
+    .c-dots{display:flex;gap:8px}
+    .c-dot{
+      width:6px;height:6px;border-radius:3px;background:var(--text-muted);
+      border:none;padding:0;cursor:pointer;transition:background var(--t),width var(--t);
+    }
+    .c-dot.active{background:var(--accent);width:20px}
+
+    /* ─────────────────────────────────────────
+       CÓMO FUNCIONA
+    ───────────────────────────────────────── */
+    #como-funciona{padding:100px 0}
+    .cf-head{margin-bottom:64px}
+    .cf-stack{display:flex;flex-direction:column;gap:3px}
+    .cf-card{
+      display:grid;grid-template-columns:1fr 1fr;
+      background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-card);
+      overflow:hidden;transition:border-color var(--t);
+    }
+    .cf-card:hover{border-color:var(--border-h)}
+    .cf-card.rev{direction:rtl}
+    .cf-card.rev>*{direction:ltr}
+    .cf-text{
+      padding:52px 48px;display:flex;flex-direction:column;justify-content:center;gap:14px;
+      position:relative;
+    }
+    .cf-step{font-family:var(--f-mono);font-size:10px;font-weight:700;color:var(--accent);letter-spacing:.09em;text-transform:uppercase}
+    .cf-title{font-family:var(--f-title);font-size:clamp(28px,3.5vw,44px);font-weight:900;text-transform:uppercase;line-height:.95}
+    .cf-desc{font-size:14px;color:var(--text-body);line-height:1.7;max-width:380px}
+    .cf-num-deco{
+      font-family:var(--f-title);font-size:140px;font-weight:900;
+      color:rgba(204,255,0,.05);line-height:1;
+      position:absolute;right:12px;bottom:-20px;pointer-events:none;user-select:none;
+    }
+    .cf-visual{
+      position:relative;overflow:hidden;
+      display:flex;align-items:center;justify-content:center;background:#0c0c0c;
+    }
+    .cf-visual img{
+      position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;
+    }
+    .cf-ph{
+      width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(135deg,#0c0c0c,#111111);min-height:280px;
+    }
+    .cf-lbl{
+      position:absolute;bottom:14px;left:14px;z-index:2;
+      font-family:var(--f-mono);font-size:9px;font-weight:700;
+      color:var(--accent);background:var(--accent-dim);border:1px solid var(--accent-bdr);
+      padding:4px 10px;border-radius:4px;letter-spacing:.07em;text-transform:uppercase;
+    }
+
+    /* ─────────────────────────────────────────
+       FEATURE BLOCKS
+    ───────────────────────────────────────── */
+    #features{padding:100px 0}
+    .fb{
+      display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;
+      padding:72px 0;border-top:1px solid var(--border);
+    }
+    .fb:first-child{border-top:none;padding-top:0}
+    .fb.rev{direction:rtl}
+    .fb.rev>*{direction:ltr}
+    .fb-left{display:flex;flex-direction:column;gap:18px}
+    .fb-title{font-family:var(--f-title);font-size:clamp(34px,5vw,58px);font-weight:900;text-transform:uppercase;line-height:.9}
+    .fb-text{font-size:15px;color:var(--text-body);line-height:1.75;max-width:400px}
+    .fb-visual{
+      background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-card);
+      overflow:hidden;aspect-ratio:4/3;position:relative;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .fb-visual img,.fb-visual svg{
+      position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;
+    }
+    .fb-ph{
+      width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(135deg,#0d0d0d,#121212);position:relative;overflow:hidden;
+    }
+    .fb-ov{
+      position:absolute;inset:0;z-index:2;
+      background:linear-gradient(transparent 45%,rgba(0,0,0,.88) 100%);
+      display:flex;align-items:flex-end;padding:22px;
+    }
+    .fb-ov p{font-size:12px;color:rgba(255,255,255,.6);line-height:1.55}
+
+    /* ─────────────────────────────────────────
+       PRECIOS
+    ───────────────────────────────────────── */
+    #precios{padding:100px 0;scroll-margin-top:68px}
+    .px-head{text-align:center;margin-bottom:52px}
+    .px-head .section-sub{margin:14px auto 0;text-align:center}
+    .px-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
+    .px-card{
+      background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-card);
+      padding:36px 28px;display:flex;flex-direction:column;gap:20px;
+      transition:border-color var(--t),box-shadow var(--t);
+    }
+    .px-card:hover{border-color:var(--border-h)}
+    .px-card.feat{
+      border-color:var(--accent-bdr);
+      background:linear-gradient(160deg,var(--bg-card) 0%,rgba(204,255,0,.04) 100%);
+    }
+    .px-card.feat:hover{box-shadow:var(--shadow-lime)}
+    .px-lbl{
+      display:inline-block;font-family:var(--f-mono);font-size:9px;font-weight:700;
+      color:var(--accent);background:var(--accent-dim);border:1px solid var(--accent-bdr);
+      padding:3px 10px;border-radius:40px;text-transform:uppercase;letter-spacing:.08em;
+    }
+    .px-name{font-family:var(--f-title);font-size:24px;font-weight:800;text-transform:uppercase}
+    .px-amount{display:flex;align-items:baseline;gap:3px;white-space:nowrap}
+    .px-cur{font-family:var(--f-mono);font-size:13px;font-weight:700;color:var(--text-muted)}
+    .px-num{font-family:var(--f-mono);font-size:44px;font-weight:700;color:var(--text);line-height:1}
+    .px-per{font-family:var(--f-mono);font-size:11px;color:var(--text-muted);margin-left:2px}
+    .px-desc{font-size:13px;color:var(--text-body);line-height:1.65;flex:1}
+    .px-note{text-align:center;margin-top:28px;font-size:13px;color:var(--text-muted);line-height:1.6}
+    .px-cta{text-align:center;margin-top:20px}
+
+    /* ─────────────────────────────────────────
+       QUÉ INCLUYE
+    ───────────────────────────────────────── */
+    #incluye{padding:100px 0}
+    .inc-in{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:start}
+    .inc-head{max-width:380px;display:flex;flex-direction:column;gap:20px}
+    .inc-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+    .chk{
+      display:flex;align-items:flex-start;gap:12px;
+      padding:14px 16px 14px 0;border-bottom:1px solid var(--border);
+      font-size:13px;color:var(--text-body);line-height:1.5;
+    }
+    .chk:nth-child(even){padding-right:0;padding-left:16px;border-left:1px solid var(--border)}
+    .chk-ico{
+      flex-shrink:0;width:18px;height:18px;
+      background:var(--accent-dim);border:1px solid var(--accent-bdr);border-radius:50%;
+      display:flex;align-items:center;justify-content:center;margin-top:1px;
+    }
+
+    /* ─────────────────────────────────────────
+       ROADMAP
+    ───────────────────────────────────────── */
+    #roadmap{padding:100px 0}
+    .rm-head{margin-bottom:52px}
+    .rm-track{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+    .rm-card{
+      background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-card);
+      overflow:hidden;transition:border-color var(--t);
+    }
+    .rm-card:hover{border-color:var(--border-h)}
+    .rm-img{
+      aspect-ratio:4/3;background:#0c0c0c;
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden;position:relative;
+    }
+    .rm-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+    .rm-ph{
+      width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+      background:linear-gradient(135deg,#0c0c0c,#101010);
+    }
+    .rm-body{padding:18px 16px;display:flex;flex-direction:column;gap:6px}
+    .rm-num{font-family:var(--f-mono);font-size:9px;font-weight:700;color:var(--accent);letter-spacing:.09em}
+    .rm-title{font-family:var(--f-title);font-size:16px;font-weight:800;text-transform:uppercase;line-height:1.1}
+
+    /* ─────────────────────────────────────────
+       SPONSORS
+    ───────────────────────────────────────── */
+    #sponsors{padding:100px 0;border-top:1px solid var(--border)}
+    .sp-head{text-align:center;margin-bottom:52px}
+    .sp-head .section-sub{margin:14px auto 0;text-align:center}
+    .sp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .sp-card{
+      background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-card);
+      padding:36px 28px;display:flex;flex-direction:column;gap:16px;
+      transition:border-color var(--t);
+    }
+    .sp-card:hover{border-color:var(--border-h)}
+    .sp-ico{
+      width:48px;height:48px;border-radius:10px;
+      background:var(--accent-dim);border:1px solid var(--accent-bdr);
+      display:flex;align-items:center;justify-content:center;
+    }
+    .sp-title{font-family:var(--f-title);font-size:22px;font-weight:800;text-transform:uppercase;line-height:1.05}
+    .sp-desc{font-size:13px;color:var(--text-body);line-height:1.65;flex:1}
+    .sp-tag{
+      display:inline-block;font-family:var(--f-mono);font-size:9px;font-weight:700;
+      color:var(--text-muted);border:1px solid var(--border);
+      padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.07em;
+    }
+
+    /* ─────────────────────────────────────────
+       CONTACTO
+    ───────────────────────────────────────── */
+    #contacto{padding:100px 0;scroll-margin-top:68px}
+    .ct-in{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start}
+    .ct-head{display:flex;flex-direction:column;gap:20px;max-width:420px}
+    .ct-head .section-sub{max-width:100%}
+    form{display:flex;flex-direction:column;gap:14px}
+    .f-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field label{font-family:var(--f-mono);font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}
+    .field input{
+      background:var(--bg-card);border:1px solid var(--border);border-radius:8px;
+      color:var(--text);font-size:14px;padding:0 14px;height:48px;outline:none;
+      transition:border-color var(--t);width:100%;
+    }
+    .field input:focus{border-color:var(--accent-bdr)}
+    .field input::placeholder{color:var(--text-muted)}
+    .f-legal{font-size:11px;color:var(--text-muted);line-height:1.6}
+    .f-success{
+      display:none;padding:14px 18px;border-radius:8px;
+      background:var(--accent-dim);border:1px solid var(--accent-bdr);
+      font-size:14px;color:var(--accent);font-weight:600;
+    }
+
+    /* ─────────────────────────────────────────
+       FOOTER
+    ───────────────────────────────────────── */
+    #footer{border-top:1px solid var(--border);padding:48px 0 32px}
+    .ft-top{
+      display:flex;align-items:flex-start;justify-content:space-between;
+      gap:32px;margin-bottom:40px;flex-wrap:wrap;
+    }
+    .ft-brand{max-width:280px}
+    .ft-tagline{font-size:13px;color:var(--text-muted);margin-top:10px;line-height:1.55}
+    .ft-links{display:flex;gap:28px;flex-wrap:wrap}
+    .ft-links a{font-size:13px;color:var(--text-muted);transition:color var(--t)}
+    .ft-links a:hover{color:var(--text)}
+    .ft-soc{display:flex;gap:10px}
+    .soc-btn{
+      width:40px;height:40px;border-radius:8px;border:1px solid var(--border);
+      background:var(--bg-card);display:flex;align-items:center;justify-content:center;
+      color:var(--text-muted);transition:color var(--t),border-color var(--t);
+    }
+    .soc-btn:hover{color:var(--text);border-color:var(--border-h)}
+    .ft-bot{
+      border-top:1px solid var(--border);padding-top:22px;
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+      font-family:var(--f-mono);font-size:10px;color:var(--text-muted);
+    }
+
+    /* ─────────────────────────────────────────
+       RESPONSIVE
+    ───────────────────────────────────────── */
+    @media(max-width:1024px){
+      .hero-in{grid-template-columns:1fr}
+      .hero-right{display:none}
+      .cf-card{grid-template-columns:1fr}
+      .cf-card.rev{direction:ltr}
+      .cf-visual{min-height:220px}
+      .inc-in{grid-template-columns:1fr;gap:48px}
+      .rm-track{grid-template-columns:repeat(3,1fr)}
+    }
+    @media(max-width:900px){
+      .hdr-nav,.hdr-cta-wrap{display:none}
+      .ham{display:flex}
+      .fb{grid-template-columns:1fr;gap:32px}
+      .fb.rev{direction:ltr}
+      .ct-in{grid-template-columns:1fr;gap:48px}
+      .px-grid{grid-template-columns:1fr}
+      .sp-grid{grid-template-columns:1fr}
+    }
+    @media(max-width:640px){
+      .hero-stats{gap:20px}
+      .f-row{grid-template-columns:1fr}
+      .rm-track{grid-template-columns:1fr 1fr}
+      .inc-grid{grid-template-columns:1fr}
+      .chk:nth-child(even){padding-left:0;border-left:none}
+      .ft-top{flex-direction:column}
+    }
+    @media(max-width:420px){
+      .rm-track{grid-template-columns:1fr}
+      .c-card{flex:0 0 calc(100% - 4px)}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     HEADER
+════════════════════════════════════════ -->
+<header id="hdr">
+  <div class="hdr-in">
+    <a href="#" class="logo">
+      <div class="logo-block"><span>369</span></div>
+      <div class="logo-text">
+        <span class="logo-name">VISION369</span>
+        <span class="logo-sub">Cobertura auto</span>
+      </div>
+    </a>
+
+    <nav class="hdr-nav">
+      <a href="#servicio">Servicio</a>
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#precios">Precios</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+
+    <div class="hdr-cta-wrap">
+      <a href="#contacto" class="btn btn-lime">Quiero una demo</a>
+    </div>
+
+    <button class="ham" id="ham" aria-label="Menú">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+
+  <nav class="mob-nav" id="mobNav">
+    <a href="#servicio">Servicio</a>
+    <a href="#como-funciona">Cómo funciona</a>
+    <a href="#precios">Precios</a>
+    <a href="#contacto">Contacto</a>
+    <a href="#contacto" class="btn btn-lime">Quiero una demo</a>
+  </nav>
+</header>
+
+<!-- ═══════════════════════════════════════
+     HERO
+════════════════════════════════════════ -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-in">
+
+    <div class="hero-left">
+      <div class="r"><span class="badge">Cobertura audiovisual automática</span></div>
+      <h1 class="hero-h1 r d1">Tu torneo,<br><em>en pantalla.</em></h1>
+      <p class="hero-p r d2">Grabamos cada partido automáticamente y lo subimos a YouTube el mismo día. Sin camarógrafos.</p>
+      <div class="hero-ctas r d3">
+        <a href="#contacto" class="btn btn-lime">
+          Solicitar piloto
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M3 7.5h9M9 4l3.5 3.5L9 11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="#como-funciona" class="hero-link">
+          Ver cómo funciona
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v9M2.5 8l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+      <div class="hero-stats r d4">
+        <div>
+          <span class="stat-num">4</span>
+          <span class="stat-lbl">Cámaras por jornada</span>
+        </div>
+        <div>
+          <span class="stat-num">24h</span>
+          <span class="stat-lbl">Entrega garantizada</span>
+        </div>
+        <div>
+          <span class="stat-num">YT</span>
+          <span class="stat-lbl">Canal propio</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-right r d2">
+      <div class="hero-panel">
+        <video autoplay muted loop playsinline id="heroVid">
+          <source src="assets/vision369-comercial-remotion.mp4" type="video/mp4">
+        </video>
+        <div class="panel-ph">
+          <!-- Field atmosphere SVG -->
+          <svg class="panel-ph-svg" width="260" height="180" viewBox="0 0 260 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Field lines -->
+            <rect x="10" y="10" width="240" height="160" rx="4" stroke="rgba(204,255,0,0.08)" stroke-width="1.5"/>
+            <line x1="130" y1="10" x2="130" y2="170" stroke="rgba(204,255,0,0.06)" stroke-width="1"/>
+            <!-- Center circle -->
+            <circle cx="130" cy="90" r="38" stroke="rgba(204,255,0,0.07)" stroke-width="1.2"/>
+            <circle cx="130" cy="90" r="3" fill="rgba(204,255,0,0.2)"/>
+            <!-- Goal areas -->
+            <rect x="10" y="60" width="32" height="60" stroke="rgba(204,255,0,0.07)" stroke-width="1" fill="none"/>
+            <rect x="218" y="60" width="32" height="60" stroke="rgba(204,255,0,0.07)" stroke-width="1" fill="none"/>
+            <!-- Tracking box -->
+            <rect x="98" y="54" width="64" height="72" rx="2" stroke="rgba(204,255,0,0.22)" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <!-- Corner marks -->
+            <path d="M22 22 l12 0 M22 22 l0 12" stroke="rgba(204,255,0,0.18)" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M238 22 l-12 0 M238 22 l0 12" stroke="rgba(204,255,0,0.18)" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M22 158 l12 0 M22 158 l0 -12" stroke="rgba(204,255,0,0.18)" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M238 158 l-12 0 M238 158 l0 -12" stroke="rgba(204,255,0,0.18)" stroke-width="1.5" stroke-linecap="round"/>
+            <!-- Tracking dot -->
+            <circle cx="130" cy="90" r="6" fill="rgba(204,255,0,0.15)" stroke="rgba(204,255,0,0.4)" stroke-width="1"/>
+            <!-- REC dot -->
+            <circle cx="224" cy="24" r="4" fill="#ff3b30"/>
+            <text x="232" y="28" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" letter-spacing="0.5">REC</text>
+          </svg>
+        </div>
+        <div class="panel-live">EN VIVO</div>
+        <div class="panel-ov">
+          <strong>Mirá tus mejores jugadas</strong>
+          <p>Partido completo, goles y momentos clave listos para compartir el mismo día.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     TRUST BAR
+════════════════════════════════════════ -->
+<div id="trust">
+  <div class="trust-in">
+    <div class="trust-item">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 8l2 2L10.5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Grabación automática
+    </div>
+    <div class="trust-item">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 8l1.5 1.5L10 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Sin camarógrafos
+    </div>
+    <div class="trust-item">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      YouTube el mismo día
+    </div>
+    <div class="trust-item">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8.5l4 4 8-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Entrega garantizada 24h
+    </div>
+    <div class="trust-item">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5v2M8 12.5v2M14.5 8h-2M3.5 8h-2M12.36 3.64l-1.42 1.42M5.06 10.94l-1.42 1.42M12.36 12.36l-1.42-1.42M5.06 5.06L3.64 3.64" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Streaming en vivo
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SERVICIO
+════════════════════════════════════════ -->
+<section id="servicio">
+  <div class="container">
+    <div class="srv-head r">
+      <span class="badge">Servicio</span>
+      <h2 class="section-title" style="margin-top:16px">El mejor tercer tiempo,<br>llegó para quedarse.</h2>
+      <p class="section-sub">Cada partido genera una pieza concreta: video completo, canal activo, datos y material para crecer.</p>
+    </div>
+
+    <div class="carousel-outer">
+      <div class="carousel-track" id="cTrack">
+
+        <div class="c-card active">
+          <div class="c-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="9" r="4" stroke="#CCFF00" stroke-width="1.6"/><path d="M4 19c0-3.866 3.134-7 7-7h2c3.866 0 7 3.134 7 7" stroke="#CCFF00" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <span class="c-num">01 / JUGADOR</span>
+          <h3 class="c-title">Experiencia del jugador</h3>
+          <p class="c-text">Cada jugador accede a su partido completo el mismo día. Lo revive, lo comparte y vuelve al torneo con ganas de más.</p>
+        </div>
+
+        <div class="c-card">
+          <div class="c-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="5" width="18" height="13" rx="2" stroke="#CCFF00" stroke-width="1.6"/><path d="M8 9.5l4 2.5-4 2.5v-5z" fill="#CCFF00"/></svg>
+          </div>
+          <span class="c-num">02 / TORNEO</span>
+          <h3 class="c-title">Contenido del torneo</h3>
+          <p class="c-text">El club construye su propio canal de YouTube sin sumar carga operativa a la organización. El contenido se genera solo.</p>
+        </div>
+
+        <div class="c-card">
+          <div class="c-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2l2.09 6.26L19 8l-5.27 3.84L15.27 18 11 14.27 6.73 18l1.54-6.16L3 8l5.91.26L11 2z" stroke="#CCFF00" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="c-num">03 / COMERCIAL</span>
+          <h3 class="c-title">Oportunidad comercial</h3>
+          <p class="c-text">Goles, mejores jugadas y resúmenes por fecha se convierten en inventario real para sponsors. Métricas reales, propuesta real.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="carousel-ctrl">
+      <button class="c-btn" id="cPrev" aria-label="Anterior">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="c-dots" id="cDots">
+        <button class="c-dot active" data-i="0"></button>
+        <button class="c-dot" data-i="1"></button>
+        <button class="c-dot" data-i="2"></button>
+      </div>
+      <button class="c-btn" id="cNext" aria-label="Siguiente">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     CÓMO FUNCIONA
+════════════════════════════════════════ -->
+<section id="como-funciona">
+  <div class="container">
+    <div class="cf-head r">
+      <span class="badge">Cómo funciona</span>
+    </div>
+
+    <div class="cf-stack">
+
+      <!-- Card 01 -->
+      <div class="cf-card r">
+        <div class="cf-text">
+          <span class="cf-step">PASO 01</span>
+          <h3 class="cf-title">Instalamos las cámaras</h3>
+          <p class="cf-desc">Nuestro equipo técnico llega antes del inicio de la jornada. Montamos las cámaras en puntos estratégicos y verificamos el encuadre óptimo.</p>
+          <span class="cf-num-deco">01</span>
+        </div>
+        <div class="cf-visual">
+          <img src="assets/como-funciona-01-instalacion.png" alt="Instalación de cámaras" loading="lazy">
+          <div class="cf-ph">
+            <svg width="180" height="160" viewBox="0 0 180 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Tripod legs -->
+              <line x1="90" y1="95" x2="50" y2="148" stroke="rgba(204,255,0,0.3)" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="90" y1="95" x2="90" y2="150" stroke="rgba(204,255,0,0.3)" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="90" y1="95" x2="130" y2="148" stroke="rgba(204,255,0,0.3)" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Camera body -->
+              <rect x="62" y="58" width="56" height="40" rx="6" fill="#1a1a1a" stroke="rgba(204,255,0,0.5)" stroke-width="1.5"/>
+              <!-- Lens -->
+              <circle cx="90" cy="78" r="14" fill="#111" stroke="rgba(204,255,0,0.4)" stroke-width="1.5"/>
+              <circle cx="90" cy="78" r="8" fill="#0a0a0a" stroke="rgba(204,255,0,0.25)" stroke-width="1"/>
+              <circle cx="90" cy="78" r="3" fill="rgba(204,255,0,0.15)"/>
+              <!-- Record dot -->
+              <circle cx="106" cy="63" r="4" fill="#ff3b30"/>
+              <!-- Mount -->
+              <rect x="82" y="98" width="16" height="8" rx="2" fill="rgba(204,255,0,0.2)"/>
+              <!-- Field lines perspective -->
+              <path d="M10 148 L90 80 L170 148" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+              <path d="M10 148 L170 148" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+              <path d="M30 148 L90 90 L150 148" stroke="rgba(255,255,255,0.04)" stroke-width="0.8"/>
+              <!-- FOV indicator -->
+              <path d="M90 78 L26 140 M90 78 L154 140" stroke="rgba(204,255,0,0.1)" stroke-width="1" stroke-dasharray="4 4"/>
+            </svg>
+          </div>
+          <div class="cf-lbl">[ Vista previa instalación óptica ]</div>
+        </div>
+      </div>
+
+      <!-- Card 02 -->
+      <div class="cf-card rev r">
+        <div class="cf-text">
+          <span class="cf-step">PASO 02</span>
+          <h3 class="cf-title">Grabación automática</h3>
+          <p class="cf-desc">Nuestra IA de seguimiento deportivo sigue el juego sola. Sin camarógrafo presente, el sistema detecta la acción y el movimiento de forma inteligente.</p>
+          <span class="cf-num-deco">02</span>
+        </div>
+        <div class="cf-visual">
+          <img src="assets/como-funciona-02-grabacion.png" alt="Grabación automática con IA" loading="lazy">
+          <div class="cf-ph">
+            <svg width="200" height="160" viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Field top view -->
+              <rect x="12" y="12" width="176" height="136" rx="3" stroke="rgba(204,255,0,0.08)" stroke-width="1"/>
+              <line x1="100" y1="12" x2="100" y2="148" stroke="rgba(204,255,0,0.06)" stroke-width="1"/>
+              <circle cx="100" cy="80" r="28" stroke="rgba(204,255,0,0.07)" stroke-width="1"/>
+              <!-- AI tracking boxes -->
+              <rect x="72" y="58" width="20" height="28" rx="2" stroke="rgba(204,255,0,0.5)" stroke-width="1.2" stroke-dasharray="3 2"/>
+              <rect x="100" y="52" width="22" height="32" rx="2" stroke="rgba(204,255,0,0.7)" stroke-width="1.5" stroke-dasharray="3 2"/>
+              <rect x="52" y="70" width="16" height="22" rx="2" stroke="rgba(204,255,0,0.35)" stroke-width="1" stroke-dasharray="3 2"/>
+              <!-- Tracking paths -->
+              <path d="M82 72 Q90 65 111 68" stroke="rgba(204,255,0,0.2)" stroke-width="1" stroke-dasharray="2 3"/>
+              <!-- Dots (players) -->
+              <circle cx="82" cy="72" r="3" fill="rgba(204,255,0,0.6)"/>
+              <circle cx="111" cy="68" r="4" fill="rgba(204,255,0,0.9)"/>
+              <circle cx="60" cy="81" r="3" fill="rgba(204,255,0,0.4)"/>
+              <circle cx="140" cy="85" r="3" fill="rgba(255,100,100,0.6)"/>
+              <circle cx="130" cy="65" r="3" fill="rgba(255,100,100,0.5)"/>
+              <!-- Ball -->
+              <circle cx="111" cy="68" r="7" stroke="rgba(204,255,0,0.5)" stroke-width="1" fill="none"/>
+              <!-- AI label -->
+              <rect x="140" y="20" width="50" height="18" rx="3" fill="rgba(204,255,0,0.1)" stroke="rgba(204,255,0,0.3)" stroke-width="0.8"/>
+              <text x="148" y="32" font-family="JetBrains Mono,monospace" font-size="8" font-weight="700" fill="rgba(204,255,0,0.8)">IA ●</text>
+            </svg>
+          </div>
+          <div class="cf-lbl">[ Tracking IA activo ]</div>
+        </div>
+      </div>
+
+      <!-- Card 03 -->
+      <div class="cf-card r">
+        <div class="cf-text">
+          <span class="cf-step">PASO 03</span>
+          <h3 class="cf-title">YouTube el mismo día</h3>
+          <p class="cf-desc">Editamos, procesamos y subimos el video a la nube. El link del partido completo está disponible antes de que termine la jornada.</p>
+          <span class="cf-num-deco">03</span>
+        </div>
+        <div class="cf-visual">
+          <img src="assets/como-funciona-03-youtube.png" alt="Subida a YouTube" loading="lazy">
+          <div class="cf-ph">
+            <svg width="200" height="160" viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Upload cloud -->
+              <path d="M100 100 L100 50" stroke="rgba(204,255,0,0.5)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M82 68 L100 50 L118 68" stroke="rgba(204,255,0,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Cloud shape -->
+              <path d="M68 92 Q54 92 54 78 Q54 66 66 66 Q68 54 80 54 Q86 46 100 46 Q116 46 120 58 Q132 58 136 70 Q146 70 146 82 Q146 92 132 92 Z" stroke="rgba(255,255,255,0.12)" stroke-width="1.2" fill="none"/>
+              <!-- YouTube logo below -->
+              <rect x="72" y="108" width="56" height="36" rx="8" fill="#FF0000" opacity="0.9"/>
+              <path d="M91 126 l20 -10 v20 z" fill="white"/>
+              <!-- Progress bar -->
+              <rect x="40" y="150" width="120" height="3" rx="1.5" fill="rgba(255,255,255,0.06)"/>
+              <rect x="40" y="150" width="90" height="3" rx="1.5" fill="rgba(204,255,0,0.7)"/>
+              <text x="140" y="154" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(204,255,0,0.7)">94%</text>
+            </svg>
+          </div>
+          <div class="cf-lbl">[ Procesando feed ... 94% ]</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     FEATURE BLOCKS
+════════════════════════════════════════ -->
+<section id="features">
+  <div class="container">
+
+    <!-- Block A: Tracking IA -->
+    <div class="fb r">
+      <div class="fb-left">
+        <span class="badge">Tracking IA</span>
+        <h2 class="fb-title">Grabación automática.<br>Sin operador.</h2>
+        <p class="fb-text">Grabación automática con detección inteligente de la acción. Sin necesitar a nadie mirando la pantalla. Reportes con AI próximamente.</p>
+      </div>
+      <div class="fb-visual">
+        <img src="assets/feature-tracking-ia.png" alt="Tracking IA" loading="lazy">
+        <div class="fb-ph">
+          <svg width="100%" height="100%" viewBox="0 0 400 300" fill="none" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+            <rect width="400" height="300" fill="#0d0d0d"/>
+            <!-- Grid -->
+            <defs>
+              <pattern id="pg" x="0" y="0" width="36" height="36" patternUnits="userSpaceOnUse">
+                <path d="M36 0H0v36" stroke="rgba(204,255,0,0.04)" stroke-width="0.8" fill="none"/>
+              </pattern>
+            </defs>
+            <rect width="400" height="300" fill="url(#pg)"/>
+            <!-- Camera viewfinder frame -->
+            <rect x="40" y="30" width="320" height="240" rx="4" stroke="rgba(204,255,0,0.08)" stroke-width="1.2" fill="none"/>
+            <!-- Corner brackets -->
+            <path d="M52 42 h20 M52 42 v16" stroke="rgba(204,255,0,0.5)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M348 42 h-20 M348 42 v16" stroke="rgba(204,255,0,0.5)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M52 258 h20 M52 258 v-16" stroke="rgba(204,255,0,0.5)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M348 258 h-20 M348 258 v-16" stroke="rgba(204,255,0,0.5)" stroke-width="2" stroke-linecap="round"/>
+            <!-- Tracking boxes (players) -->
+            <rect x="150" y="90" width="48" height="72" rx="3" stroke="rgba(204,255,0,0.8)" stroke-width="1.5" stroke-dasharray="4 2" fill="rgba(204,255,0,0.04)"/>
+            <text x="150" y="86" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(204,255,0,0.7)">JUGADOR #9</text>
+            <rect x="240" y="100" width="42" height="64" rx="3" stroke="rgba(204,255,0,0.4)" stroke-width="1" stroke-dasharray="4 2"/>
+            <text x="240" y="96" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(204,255,0,0.4)">JUGADOR #7</text>
+            <rect x="88" y="110" width="38" height="58" rx="3" stroke="rgba(204,255,0,0.3)" stroke-width="1" stroke-dasharray="4 2"/>
+            <!-- Ball tracking -->
+            <circle cx="196" cy="198" r="8" stroke="rgba(255,200,0,0.7)" stroke-width="1.5" fill="rgba(255,200,0,0.1)"/>
+            <text x="208" y="202" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,200,0,0.7)">PELOTA</text>
+            <!-- HUD elements -->
+            <rect x="48" y="36" width="60" height="14" rx="3" fill="rgba(204,255,0,0.1)" stroke="rgba(204,255,0,0.2)" stroke-width="0.8"/>
+            <text x="53" y="46" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(204,255,0,0.8)">● REC 02:14:33</text>
+            <rect x="280" y="36" width="60" height="14" rx="3" fill="rgba(204,255,0,0.1)" stroke="rgba(204,255,0,0.2)" stroke-width="0.8"/>
+            <text x="285" y="46" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(204,255,0,0.8)">4K · 60fps</text>
+          </svg>
+        </div>
+        <div class="fb-ov">
+          <p>Grabamos tu partido, que una vez finalizado será subido a YouTube para que lo veas. Próximamente podrás analizar el partido con AI.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Block B: YouTube - reversed -->
+    <div class="fb rev r">
+      <div class="fb-left">
+        <span class="badge">Entrega</span>
+        <h2 class="fb-title">YouTube el mismo día.</h2>
+        <p class="fb-text">Partido completo disponible antes de las 24hs. Los jugadores lo comparten, el torneo gana visibilidad orgánica y el club construye su canal.</p>
+      </div>
+      <div class="fb-visual">
+        <img src="assets/feature-youtube-channel.svg" alt="Canal de YouTube" loading="lazy">
+        <div class="fb-ph">
+          <svg width="100%" height="100%" viewBox="0 0 400 300" fill="none" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+            <rect width="400" height="300" fill="#0f0f0f"/>
+            <!-- Channel header -->
+            <rect x="0" y="0" width="400" height="80" fill="#141414"/>
+            <circle cx="44" cy="40" r="24" fill="#1f1f1f" stroke="rgba(255,0,0,0.5)" stroke-width="1.5"/>
+            <path d="M38 40 l12 -6 v12 z" fill="rgba(255,0,0,0.8)"/>
+            <text x="78" y="35" font-family="DM Sans,sans-serif" font-size="13" font-weight="700" fill="white">VISION369 SPORTS</text>
+            <text x="78" y="52" font-family="DM Sans,sans-serif" font-size="10" fill="rgba(255,255,255,0.4)">1.2K suscriptores · 48 videos</text>
+            <rect x="316" y="28" width="72" height="26" rx="13" fill="#FF0000"/>
+            <text x="340" y="45" font-family="DM Sans,sans-serif" font-size="11" font-weight="600" fill="white">SUSCRIBIR</text>
+            <!-- Videos grid -->
+            <!-- Row 1 -->
+            <rect x="12" y="96" width="112" height="66" rx="4" fill="#1a1a1a"/>
+            <rect x="12" y="96" width="112" height="66" rx="4" fill="rgba(0,60,0,0.4)"/>
+            <path d="M62 129 l14-8 v16 z" fill="rgba(204,255,0,0.8)"/>
+            <text x="14" y="178" font-family="DM Sans,sans-serif" font-size="9" fill="rgba(255,255,255,0.7)">Partido completo - Fecha 8</text>
+            <text x="14" y="190" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(255,255,255,0.3)">4.2K vistas · hace 2 días</text>
+
+            <rect x="144" y="96" width="112" height="66" rx="4" fill="#1a1a1a"/>
+            <rect x="144" y="96" width="112" height="66" rx="4" fill="rgba(0,30,60,0.5)"/>
+            <path d="M194 129 l14-8 v16 z" fill="rgba(204,255,0,0.8)"/>
+            <text x="146" y="178" font-family="DM Sans,sans-serif" font-size="9" fill="rgba(255,255,255,0.7)">Partido completo - Fecha 7</text>
+            <text x="146" y="190" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(255,255,255,0.3)">3.8K vistas · hace 1 sem</text>
+
+            <rect x="276" y="96" width="112" height="66" rx="4" fill="#1a1a1a"/>
+            <rect x="276" y="96" width="112" height="66" rx="4" fill="rgba(40,0,60,0.4)"/>
+            <path d="M326 129 l14-8 v16 z" fill="rgba(204,255,0,0.8)"/>
+            <text x="278" y="178" font-family="DM Sans,sans-serif" font-size="9" fill="rgba(255,255,255,0.7)">Goles Fecha 7 - Highlights</text>
+            <text x="278" y="190" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(255,255,255,0.3)">6.1K vistas · hace 1 sem</text>
+
+            <!-- Row 2 partial -->
+            <rect x="12" y="200" width="112" height="66" rx="4" fill="#1a1a1a" opacity="0.6"/>
+            <path d="M62 233 l14-8 v16 z" fill="rgba(204,255,0,0.4)"/>
+            <rect x="144" y="200" width="112" height="66" rx="4" fill="#1a1a1a" opacity="0.4"/>
+            <rect x="276" y="200" width="112" height="66" rx="4" fill="#1a1a1a" opacity="0.25"/>
+          </svg>
+        </div>
+        <div class="fb-ov">
+          <p>Tu torneo con canal propio: partidos completos, goles y resúmenes listos para compartir.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Block C: Vivo -->
+    <div class="fb r">
+      <div class="fb-left">
+        <span class="badge">Vivo</span>
+        <h2 class="fb-title">Streaming en vivo para partidos clave.</h2>
+        <p class="fb-text">Elegís qué partido va en vivo. Nosotros lo transmitimos. Los familiares, amigos y sponsors siguen el partido en tiempo real desde cualquier lugar.</p>
+      </div>
+      <div class="fb-visual">
+        <div class="fb-ph">
+          <svg width="100%" height="100%" viewBox="0 0 400 300" fill="none" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+            <rect width="400" height="300" fill="#0d0d0d"/>
+            <!-- Screen bezel -->
+            <rect x="36" y="24" width="328" height="220" rx="8" fill="#111" stroke="rgba(255,255,255,0.06)" stroke-width="1.5"/>
+            <!-- Screen content -->
+            <rect x="46" y="34" width="308" height="200" rx="4" fill="rgba(0,40,10,0.5)"/>
+            <!-- Field lines sim -->
+            <line x1="200" y1="34" x2="200" y2="234" stroke="rgba(255,255,255,0.06)" stroke-width="0.8"/>
+            <ellipse cx="200" cy="134" rx="40" ry="40" stroke="rgba(255,255,255,0.06)" stroke-width="0.8"/>
+            <!-- LIVE badge on screen -->
+            <rect x="54" y="42" width="50" height="17" rx="3" fill="#FF0000"/>
+            <text x="62" y="54" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" fill="white">● LIVE</text>
+            <!-- Score bar -->
+            <rect x="46" y="34" width="308" height="26" fill="rgba(0,0,0,0.6)"/>
+            <text x="54" y="52" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">LAS CAÑAS FC</text>
+            <text x="168" y="52" font-family="JetBrains Mono,monospace" font-size="12" font-weight="700" fill="white">2 – 1</text>
+            <text x="228" y="52" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(255,255,255,0.7)">ATLÉTICO SUR</text>
+            <!-- Time -->
+            <text x="334" y="52" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(204,255,0,0.8)">67'</text>
+            <!-- Viewers count -->
+            <text x="54" y="220" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,255,255,0.4)">● 142 espectadores</text>
+            <!-- Stand/mount -->
+            <path d="M200 244 L200 264" stroke="rgba(255,255,255,0.15)" stroke-width="6" stroke-linecap="round"/>
+            <path d="M170 268 Q200 262 230 268" stroke="rgba(255,255,255,0.12)" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="fb-ov">
+          <p>Transmisión en vivo para finales, semifinales o cualquier partido que definas. Tus hinchas conectados en tiempo real.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Block D: Monetización - reversed -->
+    <div class="fb rev r">
+      <div class="fb-left">
+        <span class="badge">Monetización</span>
+        <h2 class="fb-title">Base para sponsors y clips.</h2>
+        <p class="fb-text">Cuando tenés métricas, tenés inventario. Goles, mejores jugadas y resúmenes por fecha se convierten en formato vendible para marcas.</p>
+      </div>
+      <div class="fb-visual">
+        <div class="fb-ph">
+          <svg width="100%" height="100%" viewBox="0 0 400 300" fill="none" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+            <rect width="400" height="300" fill="#0d0d0d"/>
+            <!-- Clips grid -->
+            <rect x="16" y="16" width="116" height="80" rx="5" fill="#161616" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <path d="M68 56 l16-9 v18 z" fill="rgba(204,255,0,0.6)"/>
+            <rect x="16" y="100" width="56" height="13" rx="2" fill="rgba(204,255,0,0.1)"/>
+            <text x="20" y="111" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(204,255,0,0.7)">⚽ GOL #03</text>
+            <text x="20" y="124" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(255,255,255,0.3)">2.4K vistas</text>
+
+            <rect x="148" y="16" width="116" height="80" rx="5" fill="#161616" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <path d="M200 56 l16-9 v18 z" fill="rgba(204,255,0,0.6)"/>
+            <rect x="148" y="100" width="72" height="13" rx="2" fill="rgba(204,255,0,0.1)"/>
+            <text x="152" y="111" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(204,255,0,0.7)">★ JUGADA TOP</text>
+            <text x="152" y="124" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(255,255,255,0.3)">5.1K vistas</text>
+
+            <rect x="280" y="16" width="104" height="80" rx="5" fill="#161616" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <path d="M330 56 l16-9 v18 z" fill="rgba(204,255,0,0.6)"/>
+            <rect x="280" y="100" width="60" height="13" rx="2" fill="rgba(204,255,0,0.1)"/>
+            <text x="284" y="111" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(204,255,0,0.7)">📋 RESUMEN</text>
+            <text x="284" y="124" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(255,255,255,0.3)">8.7K vistas</text>
+
+            <!-- Sponsor block -->
+            <rect x="16" y="144" width="368" height="64" rx="8" fill="#141414" stroke="rgba(204,255,0,0.2)" stroke-width="1"/>
+            <text x="32" y="168" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" fill="rgba(204,255,0,0.8)">PRESENTING SPONSOR</text>
+            <rect x="32" y="176" width="80" height="20" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8"/>
+            <text x="52" y="190" font-family="DM Sans,sans-serif" font-size="9" fill="rgba(255,255,255,0.3)">TU MARCA</text>
+            <!-- Metrics -->
+            <text x="200" y="166" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,255,255,0.4)">Impactos</text>
+            <text x="200" y="182" font-family="JetBrains Mono,monospace" font-size="14" font-weight="700" fill="rgba(204,255,0,0.9)">16.2K</text>
+            <text x="280" y="166" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,255,255,0.4)">Videos</text>
+            <text x="280" y="182" font-family="JetBrains Mono,monospace" font-size="14" font-weight="700" fill="rgba(204,255,0,0.9)">48</text>
+            <!-- Bottom row clips -->
+            <rect x="16" y="222" width="180" height="56" rx="5" fill="#161616" stroke="rgba(255,255,255,0.04)" stroke-width="1" opacity="0.7"/>
+            <rect x="208" y="222" width="176" height="56" rx="5" fill="#161616" stroke="rgba(255,255,255,0.04)" stroke-width="1" opacity="0.4"/>
+          </svg>
+        </div>
+        <div class="fb-ov">
+          <p>Construí inventario publicitario real a partir de las métricas del piloto. Primero probamos, después vendemos.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     PRECIOS
+════════════════════════════════════════ -->
+<section id="precios">
+  <div class="container">
+    <div class="px-head r">
+      <span class="badge">Precios</span>
+      <h2 class="section-title" style="margin-top:16px">Precio x partido</h2>
+      <p class="section-sub">1 partido cuesta USD 120. Los packs suman descuento para sostener la cobertura mes a mes.</p>
+    </div>
+
+    <div class="px-grid">
+
+      <div class="px-card r d1">
+        <span class="px-lbl">1 partido</span>
+        <h3 class="px-name">Partido único</h3>
+        <div class="px-amount">
+          <span class="px-cur">USD</span>
+          <span class="px-num">120</span>
+          <span class="px-per">/partido</span>
+        </div>
+        <p class="px-desc">Para cubrir un partido específico y entregar el video completo en YouTube.</p>
+        <a href="#contacto" class="btn btn-ghost">Contactanos</a>
+      </div>
+
+      <div class="px-card feat r d2">
+        <span class="px-lbl">5 partidos</span>
+        <h3 class="px-name">Pack mensual</h3>
+        <div class="px-amount">
+          <span class="px-cur">USD</span>
+          <span class="px-num">480</span>
+          <span class="px-per">/pack mensual</span>
+        </div>
+        <p class="px-desc">Incluye 5 partidos al mes. Precio final con descuento aplicado. El más elegido para torneos activos.</p>
+        <a href="#contacto" class="btn btn-lime">Solicitar piloto</a>
+      </div>
+
+      <div class="px-card r d3">
+        <span class="px-lbl">hasta 60 partidos</span>
+        <h3 class="px-name">Pack anual</h3>
+        <div class="px-amount">
+          <span class="px-cur">USD</span>
+          <span class="px-num">5,760</span>
+          <span class="px-per">/año</span>
+        </div>
+        <p class="px-desc">Incluye hasta 60 partidos al año. Ideal para torneos con calendario estable y clubes con programación fija.</p>
+        <a href="#contacto" class="btn btn-ghost">Contactanos</a>
+      </div>
+
+    </div>
+
+    <p class="px-note r">Consultanos por más promociones. Nuestro servicio incluye instalación, grabación, subida a YouTube, soporte en vivo y retiro de cámaras.</p>
+    <div class="px-cta r"><a href="#contacto" class="btn btn-lime">CONTACTANOS</a></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     QUÉ INCLUYE
+════════════════════════════════════════ -->
+<section id="incluye">
+  <div class="container">
+    <div class="inc-in">
+      <div class="inc-head r">
+        <span class="badge">Incluye</span>
+        <h2 class="section-title">Todo incluido en cada jornada</h2>
+        <p class="section-sub" style="max-width:100%">Sin costos ocultos. Todo lo que necesitás para que tu torneo quede en pantalla.</p>
+      </div>
+      <div class="inc-grid r d1">
+        <div class="chk">
+          <div class="chk-ico">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#CCFF00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          Instalación y verificación de encuadre
+        </div>
+        <div class="chk">
+          <div class="chk-ico">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#CCFF00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          Grabación automática de la jornada
+        </div>
+        <div class="chk">
+          <div class="chk-ico">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#CCFF00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          Retiro de equipos al finalizar
+        </div>
+        <div class="chk">
+          <div class="chk-ico">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#CCFF00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          Subida a YouTube el mismo día
+        </div>
+        <div class="chk">
+          <div class="chk-ico">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#CCFF00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          Video completo disponible el mismo día
+        </div>
+        <div class="chk">
+          <div class="chk-ico">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#CCFF00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          Soporte operativo durante la jornada
+        </div>
+        <div class="chk">
+          <div class="chk-ico">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#CCFF00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          Reporte básico de métricas
+        </div>
+        <div class="chk">
+          <div class="chk-ico">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#CCFF00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          Posibilidad de streaming en vivo en partidos clave
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     ROADMAP
+════════════════════════════════════════ -->
+<section id="roadmap">
+  <div class="container">
+    <div class="rm-head r">
+      <span class="badge">Roadmap</span>
+      <h2 class="section-title" style="margin-top:16px">Empezamos pequeño.<br>Escalamos con métricas.</h2>
+    </div>
+
+    <div class="rm-track">
+
+      <div class="rm-card r d1">
+        <div class="rm-img">
+          <img src="assets/roadmap-01-piloto.png" alt="Piloto" loading="lazy">
+          <div class="rm-ph">
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none"><circle cx="28" cy="28" r="26" stroke="rgba(204,255,0,0.25)" stroke-width="1.5"/><text x="20" y="35" font-family="Barlow Condensed,sans-serif" font-size="24" font-weight="900" fill="rgba(204,255,0,0.6)">01</text></svg>
+          </div>
+        </div>
+        <div class="rm-body">
+          <span class="rm-num">ETAPA 01</span>
+          <h4 class="rm-title">Piloto primeros partidos</h4>
+        </div>
+      </div>
+
+      <div class="rm-card r d2">
+        <div class="rm-img">
+          <img src="assets/roadmap-02-metricas.png" alt="Métricas" loading="lazy">
+          <div class="rm-ph">
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none"><circle cx="28" cy="28" r="26" stroke="rgba(204,255,0,0.25)" stroke-width="1.5"/><text x="20" y="35" font-family="Barlow Condensed,sans-serif" font-size="24" font-weight="900" fill="rgba(204,255,0,0.6)">02</text></svg>
+          </div>
+        </div>
+        <div class="rm-body">
+          <span class="rm-num">ETAPA 02</span>
+          <h4 class="rm-title">Métricas reales</h4>
+        </div>
+      </div>
+
+      <div class="rm-card r d3">
+        <div class="rm-img">
+          <img src="assets/roadmap-03-pack-mensual.svg" alt="Pack mensual" loading="lazy">
+          <div class="rm-ph">
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none"><circle cx="28" cy="28" r="26" stroke="rgba(204,255,0,0.25)" stroke-width="1.5"/><text x="20" y="35" font-family="Barlow Condensed,sans-serif" font-size="24" font-weight="900" fill="rgba(204,255,0,0.6)">03</text></svg>
+          </div>
+        </div>
+        <div class="rm-body">
+          <span class="rm-num">ETAPA 03</span>
+          <h4 class="rm-title">Pack mensual activo</h4>
+        </div>
+      </div>
+
+      <div class="rm-card r d4">
+        <div class="rm-img">
+          <img src="assets/roadmap-04-sponsors.png" alt="Sponsors" loading="lazy">
+          <div class="rm-ph">
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none"><circle cx="28" cy="28" r="26" stroke="rgba(204,255,0,0.25)" stroke-width="1.5"/><text x="20" y="35" font-family="Barlow Condensed,sans-serif" font-size="24" font-weight="900" fill="rgba(204,255,0,0.6)">04</text></svg>
+          </div>
+        </div>
+        <div class="rm-body">
+          <span class="rm-num">ETAPA 04</span>
+          <h4 class="rm-title">Clips, resúmenes, sponsors</h4>
+        </div>
+      </div>
+
+      <div class="rm-card r d5">
+        <div class="rm-img">
+          <img src="assets/roadmap-05-temporada.png" alt="Temporada completa" loading="lazy">
+          <div class="rm-ph">
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none"><circle cx="28" cy="28" r="26" stroke="rgba(204,255,0,0.5)" stroke-width="2"/><text x="20" y="35" font-family="Barlow Condensed,sans-serif" font-size="24" font-weight="900" fill="rgba(204,255,0,0.9)">05</text></svg>
+          </div>
+        </div>
+        <div class="rm-body">
+          <span class="rm-num">ETAPA 05</span>
+          <h4 class="rm-title">Temporada completa, estadísticas IA, canal propio</h4>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     SPONSORS
+════════════════════════════════════════ -->
+<section id="sponsors">
+  <div class="container">
+    <div class="sp-head r">
+      <span class="badge">Sponsors</span>
+      <h2 class="section-title" style="margin-top:16px">Próximamente:<br>monetizá el contenido</h2>
+      <p class="section-sub">Una vez que el canal tiene métricas, el inventario se vende solo. Estos son los formatos de sponsoreo que activamos.</p>
+    </div>
+
+    <div class="sp-grid">
+
+      <div class="sp-card r d1">
+        <div class="sp-ico">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2l2.09 6.26L19 8l-5.27 3.84L15.27 18 11 14.27 6.73 18l1.54-6.16L3 8l5.91.26L11 2z" stroke="#CCFF00" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </div>
+        <h3 class="sp-title">Presenting sponsor</h3>
+        <p class="sp-desc">Marca presentada en descripción, miniaturas y comunicación general del canal. Máxima visibilidad.</p>
+        <span class="sp-tag">Después de validar vistas</span>
+      </div>
+
+      <div class="sp-card r d2">
+        <div class="sp-ico">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="4" stroke="#CCFF00" stroke-width="1.5"/><path d="M11 3v3M11 16v3M3 11h3M16 11h3M5.64 5.64l2.12 2.12M14.24 14.24l2.12 2.12M5.64 16.36l2.12-2.12M14.24 7.76l2.12-2.12" stroke="#CCFF00" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </div>
+        <h3 class="sp-title">Sponsor de goles</h3>
+        <p class="sp-desc">Marca asociada a los clips de goles. El contenido más compartido y viral del torneo.</p>
+        <span class="sp-tag">Segunda etapa</span>
+      </div>
+
+      <div class="sp-card r d3">
+        <div class="sp-ico">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="3" y="4" width="16" height="11" rx="2" stroke="#CCFF00" stroke-width="1.5"/><path d="M8 18h6M11 15v3" stroke="#CCFF00" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <h3 class="sp-title">Sponsor de resumen semanal</h3>
+        <p class="sp-desc">Marca asociada al resumen de la fecha. Formato consolidado una vez que hay volumen suficiente de contenido.</p>
+        <span class="sp-tag">Cuando haya volumen</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     CONTACTO
+════════════════════════════════════════ -->
+<section id="contacto">
+  <div class="container">
+    <div class="ct-in">
+
+      <div class="ct-head r">
+        <span class="badge">Contacto</span>
+        <h2 class="section-title">¿Querés revivir tu partido?</h2>
+        <p class="section-sub">Contactanos y coordinamos un piloto. Sin compromiso, sin letra chica.</p>
+      </div>
+
+      <div class="r d1">
+        <form id="ctForm" action="mailto:contacto@threesixnine.today" method="post" enctype="text/plain" novalidate>
+          <div class="f-row">
+            <div class="field">
+              <label for="nombre">Nombre y apellido</label>
+              <input type="text" id="nombre" name="nombre" placeholder="Juan Pérez" required autocomplete="name">
+            </div>
+            <div class="field">
+              <label for="equipo">Nombre del equipo</label>
+              <input type="text" id="equipo" name="equipo" placeholder="Las Cañas FC" required>
+            </div>
+          </div>
+          <div class="f-row">
+            <div class="field">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" placeholder="juan@email.com" required autocomplete="email">
+            </div>
+            <div class="field">
+              <label for="wapp">WhatsApp</label>
+              <input type="tel" id="wapp" name="whatsapp" placeholder="+54 11 0000-0000" autocomplete="tel">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-lime" style="width:100%">Quiero grabar mi partido</button>
+          <p class="f-legal">Tus datos no se comparten. Los usamos solo para coordinar el piloto.</p>
+          <div class="f-success" id="fSuccess">¡Mensaje enviado! Te contactamos pronto.</div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     FOOTER
+════════════════════════════════════════ -->
+<footer id="footer">
+  <div class="container">
+    <div class="ft-top">
+
+      <div class="ft-brand">
+        <a href="#" class="logo">
+          <div class="logo-block"><span>369</span></div>
+          <div class="logo-text">
+            <span class="logo-name">VISION369</span>
+            <span class="logo-sub">Cobertura auto</span>
+          </div>
+        </a>
+        <p class="ft-tagline">"Cada partido merece ser visto."</p>
+      </div>
+
+      <div class="ft-links">
+        <a href="#servicio">Servicio</a>
+        <a href="#precios">Precios</a>
+        <a href="#contacto">Contacto</a>
+      </div>
+
+      <div class="ft-soc">
+        <!-- Instagram -->
+        <a href="https://instagram.com/vision369" class="soc-btn" aria-label="Instagram" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="4" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="9" r="3.5" stroke="currentColor" stroke-width="1.5"/><circle cx="13.2" cy="4.8" r="0.9" fill="currentColor"/></svg>
+        </a>
+        <!-- YouTube -->
+        <a href="https://youtube.com/@vision369" class="soc-btn" aria-label="YouTube" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1.5" y="4" width="15" height="10" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 6.5l4 2.5-4 2.5v-5z" fill="currentColor"/></svg>
+        </a>
+        <!-- WhatsApp -->
+        <a href="https://wa.me/5491100000000" class="soc-btn" aria-label="WhatsApp" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7.5" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 6C7 6.8 7.5 7.4 8.2 7.9L9 7.2c.8.4 1.5.8 1.8 1.5l-.6 1.1c.3.8.8 1.5 1.4 2l1-.4c.5.4.8.6.8.9C13.4 13 12 14 10.8 13.5 8 12.3 5.8 10 4.5 7.3 4 6.1 5 4.8 6.5 6z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </a>
+      </div>
+
+    </div>
+
+    <div class="ft-bot">
+      <span>threesixnine.today</span>
+      <span>© 2025 VISION369. Todos los derechos reservados.</span>
+      <span>Cada partido merece ser visto.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════ -->
+<script>
+(function(){
+  /* --- Reduced motion --- */
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* --- Header scroll --- */
+  const hdr = document.getElementById('hdr');
+  const onScroll = () => hdr.classList.toggle('scr', window.scrollY > 20);
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  /* --- Mobile menu --- */
+  const ham = document.getElementById('ham');
+  const mob = document.getElementById('mobNav');
+  ham.addEventListener('click', () => {
+    ham.classList.toggle('open');
+    mob.classList.toggle('open');
+  });
+  mob.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    ham.classList.remove('open'); mob.classList.remove('open');
+  }));
+
+  /* --- Smooth-close mobile nav on outside click --- */
+  document.addEventListener('click', e => {
+    if (!hdr.contains(e.target)) {
+      ham.classList.remove('open'); mob.classList.remove('open');
+    }
+  });
+
+  /* --- Scroll reveal --- */
+  const revels = document.querySelectorAll('.r');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        if (en.isIntersecting) { en.target.classList.add('on'); io.unobserve(en.target); }
+      });
+    }, {threshold: 0.08, rootMargin:'0px 0px -32px 0px'});
+    revels.forEach(el => io.observe(el));
+  } else {
+    revels.forEach(el => el.classList.add('on'));
+  }
+
+  /* --- Hero video fallback --- */
+  const vid = document.getElementById('heroVid');
+  if (vid) vid.addEventListener('canplay', () => vid.classList.add('loaded'), {once:true});
+
+  /* --- Asset image fallback (hide broken img so placeholder shows) --- */
+  document.querySelectorAll('img[src^="assets/"]').forEach(img => {
+    img.addEventListener('error', () => { img.style.display = 'none'; }, {once:true});
+  });
+
+  /* --- Carousel --- */
+  const track    = document.getElementById('cTrack');
+  const cards    = track ? track.querySelectorAll('.c-card') : [];
+  const dots     = document.querySelectorAll('.c-dot');
+  const btnPrev  = document.getElementById('cPrev');
+  const btnNext  = document.getElementById('cNext');
+  let active = 0;
+  let timer  = null;
+
+  function goTo(idx) {
+    active = (idx + cards.length) % cards.length;
+    cards.forEach((c,i) => {
+      c.classList.toggle('active', i === active);
+      c.classList.toggle('dim', i !== active);
+    });
+    dots.forEach((d,i) => d.classList.toggle('active', i === active));
+    /* on mobile (<= 420px): scroll to card */
+    if (window.innerWidth <= 420 && cards[active]) {
+      cards[active].scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+    }
+  }
+
+  function startTimer() {
+    if (prefersReduced) return;
+    clearInterval(timer);
+    timer = setInterval(() => goTo(active + 1), 3200);
+  }
+
+  if (track && cards.length > 1) {
+    goTo(0);
+    startTimer();
+    if (btnPrev) btnPrev.addEventListener('click', () => { goTo(active - 1); startTimer(); });
+    if (btnNext) btnNext.addEventListener('click', () => { goTo(active + 1); startTimer(); });
+    dots.forEach(d => d.addEventListener('click', () => { goTo(+d.dataset.i); startTimer(); }));
+    /* Pause on hover/focus */
+    track.addEventListener('mouseenter', () => clearInterval(timer));
+    track.addEventListener('mouseleave', startTimer);
+    track.addEventListener('focusin',    () => clearInterval(timer));
+    track.addEventListener('focusout',   startTimer);
+  }
+
+  /* --- Contact form (mailto fallback) --- */
+  const form = document.getElementById('ctForm');
+  const fSuccess = document.getElementById('fSuccess');
+  if (form) {
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      /* Build mailto body */
+      const nombre = document.getElementById('nombre').value;
+      const equipo = document.getElementById('equipo').value;
+      const email  = document.getElementById('email').value;
+      const wapp   = document.getElementById('wapp').value;
+      const body   = encodeURIComponent(`Nombre: ${nombre}\nEquipo: ${equipo}\nEmail: ${email}\nWhatsApp: ${wapp}`);
+      window.location.href = `mailto:contacto@threesixnine.today?subject=Solicitud%20de%20piloto%20%E2%80%93%20VISION369&body=${body}`;
+      /* Show success */
+      if (fSuccess) { fSuccess.style.display = 'block'; }
+      setTimeout(() => form.reset(), 400);
+    });
+  }
+
+})();
+</script>
+</body>
+</html>

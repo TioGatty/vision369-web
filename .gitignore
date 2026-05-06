@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+
+# Don't commit the 128MB source video
+assets/vision369-comercial-remotion.mp4.mp4
