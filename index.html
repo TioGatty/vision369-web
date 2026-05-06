@@ -358,12 +358,14 @@
     .fb-visual img,.fb-visual svg{
       position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;
     }
+    .fb-visual img{z-index:3}
+    .fb-visual>video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:3}
     .fb-ph{
       width:100%;height:100%;display:flex;align-items:center;justify-content:center;
-      background:linear-gradient(135deg,#0d0d0d,#121212);position:relative;overflow:hidden;
+      background:linear-gradient(135deg,#0d0d0d,#121212);position:relative;overflow:hidden;z-index:1;
     }
     .fb-ov{
-      position:absolute;inset:0;z-index:2;
+      position:absolute;inset:0;z-index:11;
       background:linear-gradient(transparent 45%,rgba(0,0,0,.88) 100%);
       display:flex;align-items:flex-end;padding:22px;
     }
@@ -372,7 +374,7 @@
     /* ─────────────────────────────────────────
        PRECIOS
     ───────────────────────────────────────── */
-    #precios{padding:100px 0;scroll-margin-top:68px}
+    #precios{padding:100px 0;scroll-margin-top:90px}
     .px-head{text-align:center;margin-bottom:52px}
     .px-head .section-sub{margin:14px auto 0;text-align:center}
     .px-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
@@ -607,7 +609,7 @@
 
     <div class="hero-left">
       <div class="r"><span class="badge">Cobertura audiovisual automática</span></div>
-      <h1 class="hero-h1 r d1">Tu torneo,<br><em>en pantalla.</em></h1>
+      <h1 class="hero-h1 r d1">Tu partido,<br><em>en tu pantalla.</em></h1>
       <p class="hero-p r d2">Grabamos cada partido automáticamente y lo subimos a YouTube el mismo día. Sin camarógrafos.</p>
       <div class="hero-ctas r d3">
         <a href="#contacto" class="btn btn-lime">
@@ -619,26 +621,12 @@
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v9M2.5 8l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
       </div>
-      <div class="hero-stats r d4">
-        <div>
-          <span class="stat-num">4</span>
-          <span class="stat-lbl">Cámaras por jornada</span>
-        </div>
-        <div>
-          <span class="stat-num">24h</span>
-          <span class="stat-lbl">Entrega garantizada</span>
-        </div>
-        <div>
-          <span class="stat-num">YT</span>
-          <span class="stat-lbl">Canal propio</span>
-        </div>
-      </div>
     </div>
 
     <div class="hero-right r d2">
       <div class="hero-panel">
         <video autoplay muted loop playsinline id="heroVid">
-          <source src="assets/vision369-comercial-remotion.mp4" type="video/mp4">
+          <source src="assets/vision369-comercial-remotion.mp4.mp4" type="video/mp4">
         </video>
         <div class="panel-ph">
           <!-- Field atmosphere SVG -->
@@ -901,7 +889,7 @@
         <p class="fb-text">Grabación automática con detección inteligente de la acción. Sin necesitar a nadie mirando la pantalla. Reportes con AI próximamente.</p>
       </div>
       <div class="fb-visual">
-        <img src="assets/feature-tracking-ia.png" alt="Tracking IA" loading="lazy">
+        <img src="assets/feature-tracking-ia.png.png" alt="Tracking IA" loading="lazy">
         <div class="fb-ph">
           <svg width="100%" height="100%" viewBox="0 0 400 300" fill="none" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
             <rect width="400" height="300" fill="#0d0d0d"/>
@@ -1002,6 +990,9 @@
         <p class="fb-text">Elegís qué partido va en vivo. Nosotros lo transmitimos. Los familiares, amigos y sponsors siguen el partido en tiempo real desde cualquier lugar.</p>
       </div>
       <div class="fb-visual">
+        <video autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:10;border-radius:inherit">
+          <source src="assets/partido-en-vivo.mp4.mp4" type="video/mp4">
+        </video>
         <div class="fb-ph">
           <svg width="100%" height="100%" viewBox="0 0 400 300" fill="none" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
             <rect width="400" height="300" fill="#0d0d0d"/>
@@ -1131,7 +1122,7 @@
         <h3 class="px-name">Pack anual</h3>
         <div class="px-amount">
           <span class="px-cur">USD</span>
-          <span class="px-num">5,760</span>
+          <span class="px-num">5.760</span>
           <span class="px-per">/año</span>
         </div>
         <p class="px-desc">Incluye hasta 60 partidos al año. Ideal para torneos con calendario estable y clubes con programación fija.</p>
