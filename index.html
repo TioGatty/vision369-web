@@ -1340,7 +1340,7 @@
       </div>
 
       <div class="r d1">
-        <form id="ctForm" action="mailto:contacto@threesixnine.today" method="post" enctype="text/plain" novalidate>
+        <form id="ctForm" novalidate>
           <div class="f-row">
             <div class="field">
               <label for="nombre">Nombre y apellido</label>
@@ -1361,10 +1361,38 @@
               <input type="tel" id="wapp" name="whatsapp" placeholder="+54 11 0000-0000" autocomplete="tel">
             </div>
           </div>
-          <button type="submit" class="btn btn-lime" style="width:100%">Quiero grabar mi partido</button>
+          <button type="submit" id="ctSubmit" class="btn btn-lime" style="width:100%">Quiero grabar mi partido</button>
           <p class="f-legal">Tus datos no se comparten. Los usamos solo para coordinar el piloto.</p>
           <div class="f-success" id="fSuccess">¡Mensaje enviado! Te contactamos pronto.</div>
+          <div class="f-error" id="fError" style="display:none;margin-top:12px;font-size:13px;color:#ff6b6b">Hubo un error. Intentá de nuevo o escribinos al WhatsApp.</div>
         </form>
+        <script>
+          document.getElementById('ctForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('ctSubmit');
+            const formId = 'mbdwalwq';
+            btn.textContent = 'Enviando...';
+            btn.disabled = true;
+            try {
+              const res = await fetch('https://formspree.io/f/' + formId, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' },
+                body: new FormData(this)
+              });
+              if (res.ok) {
+                document.getElementById('fSuccess').style.display = 'block';
+                document.getElementById('fError').style.display = 'none';
+                this.reset();
+              } else {
+                throw new Error();
+              }
+            } catch {
+              document.getElementById('fError').style.display = 'block';
+              btn.textContent = 'Quiero grabar mi partido';
+              btn.disabled = false;
+            }
+          });
+        </script>
       </div>
 
     </div>
