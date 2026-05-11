@@ -557,6 +557,137 @@
       .rm-track{grid-template-columns:1fr}
       .c-card{flex:0 0 calc(100% - 4px)}
     }
+
+    /* ─────────────────────────────────────────
+       ENHANCEMENTS — VISUAL POLISH v2
+    ───────────────────────────────────────── */
+    @keyframes pulseDot{
+      0%,100%{box-shadow:0 0 0 0 rgba(204,255,0,.45)}
+      60%{box-shadow:0 0 0 7px rgba(204,255,0,0)}
+    }
+    @keyframes floatY{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-10px)}
+    }
+    @keyframes blinkRec{
+      0%,44%,100%{opacity:1}
+      50%,94%{opacity:.12}
+    }
+    @keyframes shimmerBtn{
+      from{transform:translateX(-200%)}
+      to{transform:translateX(200%)}
+    }
+    @keyframes gradBorder{
+      0%,100%{opacity:.12}50%{opacity:.32}
+    }
+
+    /* Badge pulsing dot */
+    .badge::before{animation:pulseDot 2.6s ease-in-out infinite}
+
+    /* Hero panel subtle float on desktop */
+    @media(min-width:1025px){
+      .hero-right{animation:floatY 7s ease-in-out infinite;will-change:transform}
+    }
+
+    /* Hero panel glow ring */
+    .hero-panel{
+      border-color:rgba(204,255,0,.16);
+      box-shadow:
+        0 2px 4px rgba(0,0,0,.7),
+        0 28px 80px rgba(0,0,0,.65),
+        0 0 0 1px rgba(204,255,0,.07),
+        0 0 80px rgba(204,255,0,.05);
+    }
+
+    /* REC blink animation */
+    .panel-live::before{animation:blinkRec 2s ease-in-out infinite}
+
+    /* Hero stat chips */
+    .hero-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+    .hero-chip{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:5px 13px;border-radius:100px;
+      background:rgba(255,255,255,.028);border:1px solid rgba(255,255,255,.07);
+      font-family:var(--f-mono);font-size:10px;font-weight:700;
+      color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.06em;
+      transition:border-color var(--t),color var(--t),background var(--t);
+    }
+    .hero-chip:hover{
+      background:rgba(204,255,0,.06);
+      border-color:rgba(204,255,0,.22);
+      color:rgba(204,255,0,.7);
+    }
+    .hero-chip-dot{
+      width:4px;height:4px;border-radius:50%;
+      background:var(--accent);opacity:.75;flex-shrink:0;
+    }
+
+    /* Button lime shimmer on hover */
+    .btn-lime{position:relative;overflow:hidden;font-weight:800;letter-spacing:.01em}
+    .btn-lime::after{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.2) 50%,transparent 65%);
+      transform:translateX(-220%);transition:transform .55s ease;pointer-events:none;
+    }
+    .btn-lime:hover::after{transform:translateX(220%)}
+
+    /* Directional scroll reveals */
+    .r.from-left{opacity:0;transform:translateX(-28px)}
+    .r.from-right{opacity:0;transform:translateX(28px)}
+    .r.from-left.on,.r.from-right.on{opacity:1;transform:none}
+
+    /* CF head enhanced */
+    .cf-head{display:flex;flex-direction:column;gap:12px;margin-bottom:56px}
+    .cf-head-h{
+      font-family:var(--f-title);font-size:clamp(36px,5.5vw,64px);
+      font-weight:900;text-transform:uppercase;line-height:.9;letter-spacing:-.01em;
+    }
+    .cf-head-h em{font-style:normal;color:var(--accent)}
+    .cf-head-sub{font-size:15px;color:var(--text-body);max-width:460px;line-height:1.7}
+
+    /* CF step tag with line accent */
+    .cf-step{
+      display:inline-flex;align-items:center;gap:10px;
+      font-family:var(--f-mono);font-size:10px;font-weight:700;
+      color:var(--accent);letter-spacing:.09em;text-transform:uppercase;
+    }
+    .cf-step::before{
+      content:'';width:18px;height:1px;
+      background:var(--accent);opacity:.55;display:block;flex-shrink:0;
+    }
+
+    /* CF card left accent border on hover */
+    .cf-card{
+      border-left:2px solid transparent;
+      transition:border-left-color .3s ease,border-color .22s ease;
+    }
+    .cf-card:hover{border-left-color:rgba(204,255,0,.38)}
+
+    /* Trust bar hover */
+    .trust-item{cursor:default;transition:color var(--t)}
+    .trust-item:hover{color:rgba(255,255,255,.75)}
+    .trust-item svg{transition:color var(--t)}
+    .trust-item:hover svg{color:var(--accent)}
+
+    /* Section title em highlight */
+    .section-title em,.hero-h1 em{
+      font-style:normal;color:var(--accent);
+    }
+
+    /* Panel overlay refinement */
+    .panel-ov{padding:24px 20px 18px}
+    .panel-ov strong{font-size:20px;letter-spacing:.02em}
+    .panel-ov p{font-size:11px;margin-top:5px}
+
+    /* Feature block title refinement */
+    .fb-title{letter-spacing:-.02em}
+    .fb-text{line-height:1.8}
+
+    /* Improved card entrance from sides */
+    @media(min-width:1025px){
+      .cf-card:nth-child(odd) .cf-text{animation-delay:0s}
+      .cf-card:nth-child(even) .cf-text{animation-delay:.08s}
+    }
   </style>
 </head>
 <body>
@@ -620,6 +751,12 @@
           Ver cómo funciona
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v9M2.5 8l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
+      </div>
+
+      <div class="hero-chips r d4">
+        <div class="hero-chip"><span class="hero-chip-dot"></span>Sin camarógrafos</div>
+        <div class="hero-chip"><span class="hero-chip-dot"></span>YouTube el mismo día</div>
+        <div class="hero-chip"><span class="hero-chip-dot"></span>4K · IA tracking</div>
       </div>
     </div>
 
@@ -760,6 +897,8 @@
   <div class="container">
     <div class="cf-head r">
       <span class="badge">Cómo funciona</span>
+      <h2 class="cf-head-h r d1">Tres pasos.<br><em>Cero camarógrafos.</em></h2>
+      <p class="cf-head-sub r d2">Llegamos, grabamos y entregamos. Todo automático. Vos solo jugá.</p>
     </div>
 
     <div class="cf-stack">
@@ -1543,23 +1682,36 @@
     track.addEventListener('focusout',   startTimer);
   }
 
-  /* --- Contact form (mailto fallback) --- */
-  const form = document.getElementById('ctForm');
-  const fSuccess = document.getElementById('fSuccess');
-  if (form) {
-    form.addEventListener('submit', e => {
-      e.preventDefault();
-      /* Build mailto body */
-      const nombre = document.getElementById('nombre').value;
-      const equipo = document.getElementById('equipo').value;
-      const email  = document.getElementById('email').value;
-      const wapp   = document.getElementById('wapp').value;
-      const body   = encodeURIComponent(`Nombre: ${nombre}\nEquipo: ${equipo}\nEmail: ${email}\nWhatsApp: ${wapp}`);
-      window.location.href = `mailto:contacto@threesixnine.today?subject=Solicitud%20de%20piloto%20%E2%80%93%20VISION369&body=${body}`;
-      /* Show success */
-      if (fSuccess) { fSuccess.style.display = 'block'; }
-      setTimeout(() => form.reset(), 400);
-    });
+  /* --- Hero mouse parallax --- */
+  const heroSection = document.getElementById('hero');
+  const heroBg = heroSection ? heroSection.querySelector('.hero-bg') : null;
+  if (heroSection && heroBg && !prefersReduced) {
+    heroSection.addEventListener('mousemove', e => {
+      const rect = heroSection.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top)  / rect.height - 0.5;
+      heroBg.style.transform = `translate(${x * 12}px, ${y * 8}px) scale(1.04)`;
+    }, {passive:true});
+    heroSection.addEventListener('mouseleave', () => {
+      heroBg.style.transform = '';
+    }, {passive:true});
+  }
+
+  /* --- Trust bar stagger reveal --- */
+  const trustItems = document.querySelectorAll('.trust-item');
+  if ('IntersectionObserver' in window) {
+    const tio = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        if (en.isIntersecting) {
+          trustItems.forEach((el,i) => {
+            setTimeout(() => el.style.opacity = '1', i * 60);
+          });
+          tio.disconnect();
+        }
+      });
+    }, {threshold:0.5});
+    const trustEl = document.getElementById('trust');
+    if (trustEl) { trustItems.forEach(el => el.style.opacity='0'); tio.observe(trustEl); }
   }
 
 })();
