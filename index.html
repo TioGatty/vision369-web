@@ -374,8 +374,9 @@
     /* ─────────────────────────────────────────
        PRECIOS
     ───────────────────────────────────────── */
-    #precios{padding:100px 0;scroll-margin-top:90px}
-    .px-head{text-align:center;margin-bottom:52px}
+    #precios{padding:60px 0 100px;scroll-margin-top:90px}
+    .px-head{text-align:center;margin-bottom:28px}
+    .px-grid{scroll-margin-top:80px}
     .px-head .section-sub{margin:14px auto 0;text-align:center}
     .px-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
     .px-card{
@@ -708,7 +709,7 @@
     <nav class="hdr-nav">
       <a href="#servicio">Servicio</a>
       <a href="#como-funciona">Cómo funciona</a>
-      <a href="#precios">Precios</a>
+      <a href="#px-cards">Precios</a>
       <a href="#contacto">Contacto</a>
     </nav>
 
@@ -724,7 +725,7 @@
   <nav class="mob-nav" id="mobNav">
     <a href="#servicio">Servicio</a>
     <a href="#como-funciona">Cómo funciona</a>
-    <a href="#precios">Precios</a>
+    <a href="#px-cards">Precios</a>
     <a href="#contacto">Contacto</a>
     <a href="https://app.vision369.com.ar/" target="_blank" rel="noopener" class="btn btn-lime">Acceder a la app&nbsp;→</a>
   </nav>
@@ -1228,17 +1229,17 @@
     <div class="px-head r">
       <span class="badge">Precios</span>
       <h2 class="section-title" style="margin-top:16px">Precio x partido</h2>
-      <p class="section-sub">1 partido cuesta USD 120. Los packs suman descuento para sostener la cobertura mes a mes.</p>
+      <p class="section-sub">Desde USD 60 por partido. Los packs bajan el costo y mantienen la cobertura activa mes a mes.</p>
     </div>
 
-    <div class="px-grid">
+    <div class="px-grid" id="px-cards">
 
       <div class="px-card r d1">
         <span class="px-lbl">1 partido</span>
         <h3 class="px-name">Partido único</h3>
         <div class="px-amount">
           <span class="px-cur">USD</span>
-          <span class="px-num">120</span>
+          <span class="px-num">60</span>
           <span class="px-per">/partido</span>
         </div>
         <p class="px-desc">Para cubrir un partido específico y entregar el video completo en YouTube.</p>
@@ -1250,22 +1251,22 @@
         <h3 class="px-name">Pack mensual</h3>
         <div class="px-amount">
           <span class="px-cur">USD</span>
-          <span class="px-num">480</span>
-          <span class="px-per">/pack mensual</span>
+          <span class="px-num">160</span>
+          <span class="px-per">/mes</span>
         </div>
-        <p class="px-desc">Incluye 5 partidos al mes. Precio final con descuento aplicado. El más elegido para torneos activos.</p>
+        <p class="px-desc">5 partidos al mes. USD 32 por partido — ahorrás el 47% vs. partido único.</p>
         <a href="#contacto" class="btn btn-lime">Solicitar piloto</a>
       </div>
 
       <div class="px-card r d3">
-        <span class="px-lbl">hasta 60 partidos</span>
+        <span class="px-lbl">32 partidos</span>
         <h3 class="px-name">Pack anual</h3>
         <div class="px-amount">
           <span class="px-cur">USD</span>
-          <span class="px-num">5.760</span>
+          <span class="px-num">800</span>
           <span class="px-per">/año</span>
         </div>
-        <p class="px-desc">Incluye hasta 60 partidos al año. Ideal para torneos con calendario estable y clubes con programación fija.</p>
+        <p class="px-desc">32 partidos al año. Sale <strong>1 USD por jugador por partido</strong> — el costo más bajo del mercado.</p>
         <a href="#contacto" class="btn btn-ghost">Contactanos</a>
       </div>
 
@@ -1559,7 +1560,7 @@
 
       <div class="ft-links">
         <a href="#servicio">Servicio</a>
-        <a href="#precios">Precios</a>
+        <a href="#px-cards">Precios</a>
         <a href="#contacto">Contacto</a>
       </div>
 
