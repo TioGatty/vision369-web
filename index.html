@@ -1508,30 +1508,29 @@
           <div class="f-error" id="fError" style="display:none;margin-top:12px;font-size:13px;color:#ff6b6b">Hubo un error. Intentá de nuevo o escribinos al WhatsApp.</div>
         </form>
         <script>
-          document.getElementById('ctForm').addEventListener('submit', async function(e) {
+          document.getElementById('ctForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const btn = document.getElementById('ctSubmit');
-            const formId = 'mbdwalwq';
-            btn.textContent = 'Enviando...';
-            btn.disabled = true;
-            try {
-              const res = await fetch('https://formspree.io/f/' + formId, {
-                method: 'POST',
-                headers: { 'Accept': 'application/json' },
-                body: new FormData(this)
-              });
-              if (res.ok) {
-                document.getElementById('fSuccess').style.display = 'block';
-                document.getElementById('fError').style.display = 'none';
-                this.reset();
-              } else {
-                throw new Error();
-              }
-            } catch {
-              document.getElementById('fError').style.display = 'block';
-              btn.textContent = 'Quiero grabar mi partido';
-              btn.disabled = false;
-            }
+            const nombre  = document.getElementById('nombre').value.trim();
+            const equipo  = document.getElementById('equipo').value.trim();
+            const email   = document.getElementById('email').value.trim();
+            const wapp    = document.getElementById('wapp').value.trim();
+
+            const msg = [
+              '👋 *Nuevo contacto desde vision369.com.ar*',
+              '',
+              '👤 *Nombre:* ' + (nombre || '—'),
+              '⚽ *Equipo:* ' + (equipo || '—'),
+              '📧 *Email:* ' + (email || '—'),
+              '📱 *WhatsApp:* ' + (wapp || '—'),
+            ].join('\n');
+
+            const url = 'https://wa.me/5493815099426?text=' + encodeURIComponent(msg);
+            window.open(url, '_blank');
+
+            document.getElementById('fSuccess').style.display = 'block';
+            btn.textContent = 'Quiero grabar mi partido';
+            this.reset();
           });
         </script>
       </div>
@@ -1574,7 +1573,7 @@
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1.5" y="4" width="15" height="10" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 6.5l4 2.5-4 2.5v-5z" fill="currentColor"/></svg>
         </a>
         <!-- WhatsApp -->
-        <a href="https://wa.me/5491100000000" class="soc-btn" aria-label="WhatsApp" target="_blank" rel="noopener">
+        <a href="https://wa.me/5493815099426" class="soc-btn" aria-label="WhatsApp" target="_blank" rel="noopener">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7.5" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 6C7 6.8 7.5 7.4 8.2 7.9L9 7.2c.8.4 1.5.8 1.8 1.5l-.6 1.1c.3.8.8 1.5 1.4 2l1-.4c.5.4.8.6.8.9C13.4 13 12 14 10.8 13.5 8 12.3 5.8 10 4.5 7.3 4 6.1 5 4.8 6.5 6z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
         </a>
       </div>
